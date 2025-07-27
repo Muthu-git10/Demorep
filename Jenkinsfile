@@ -19,7 +19,7 @@ pipeline {
 
         stage('Deploy CloudFormation Stack') {
             steps {
-                withAWS(credentials: 'aws-jenkins-creds', region: "${AWS_DEFAULT_REGION}") {
+                withAWS(credentials: 'AKIA3DQM53PU5UEPCL6O', region: "${AWS_DEFAULT_REGION}") {
                     bat """
                     aws cloudformation deploy ^
                         --stack-name ${STACK_NAME} ^
