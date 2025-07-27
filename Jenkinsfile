@@ -1,34 +1,42 @@
 pipeline {
-    agent any  // Use any available Jenkins agent
+    agent any
 
     environment {
-        GIT_REPO = 'git@github.com:your-username/your-repo.git'  // <-- Update this!
-        BRANCH = 'main'  // Change if you use a different branch
+        AWS_DEFAULT_REGION = 'us-east-1'  // Change to your desired AWS region
+        STACK_NAME = 'my-cloudformation-stack'
+        TEMPLATE_FILE = 'cloudformation/my-stack-template.yaml'
+        PARAMETERS_FILE = 'cloudformation/parameters.json'
     }
 
     stages {
-     
-		stage('Build') {
-            steps {
-                echo 'Building the project...'
-                // Example: sh 'mvn clean install'  // For Maven Java projects
-            }
+		stage('Checkout Code') {
+			steps {
+			git branch: 'main',
+				url: 'https://github.com/Muthu-git10/Demorep.git',
+				credentialsId: 'Gitcredential'
+			}
         }
 
-        stage('Test') {
-            steps {
-                echo 'Running tests...'
-                // Example: sh 'npm test'  // For Node.js projects
-            }
-        }
-    }
+		stage('Deploy CloudFormation Stack') {
+			steps {
+				withAWS(credentials: 'AKIA3DQM53PU5UEPCL6O', region: 'us-east-1') {
+					bat """
+						aws cloudformation deploy ^
+							--stack-name my-cloudformation-stack ^
+							--template-file cloudformation/my-stack-template.yaml ^
+							--parameter-overrides file://cloudformation/parameters.json ^
+							--capabilities CAPABILITY_NAMED_IAM
+					"""
+				}
+			}
+		}
 
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'Deployment successful!'
         }
         failure {
-            echo 'Pipeline failed.'
+            echo 'Deployment failed.'
         }
     }
 }
