@@ -7,14 +7,8 @@ pipeline {
     }
 
     stages {
-        stage('Checkout Code') {
-            steps {
-                echo 'Cloning repository...'
-                git branch: "${BRANCH}", url: "${GIT_REPO}"
-            }
-        }
-
-        stage('Build') {
+     
+		stage('Build') {
             steps {
                 echo 'Building the project...'
                 // Example: sh 'mvn clean install'  // For Maven Java projects
