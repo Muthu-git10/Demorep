@@ -24,7 +24,7 @@ pipeline {
                     aws cloudformation deploy ^
                         --stack-name ${STACK_NAME} ^
                         --template-file ${TEMPLATE_FILE} ^
-                        --parameter-overrides file://${PARAMETERS_FILE} ^
+                        --parameter-overrides KeyName=forvpcppk ^
                         --capabilities CAPABILITY_NAMED_IAM
                     """
                 }

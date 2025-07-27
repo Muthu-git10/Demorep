@@ -17,6 +17,7 @@ Parameters:
   ImageID:
     Description: EC2 instance type
     Type: String
+    Default: ami-08a6efd148b1f7504
 Resources:
   EC2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
