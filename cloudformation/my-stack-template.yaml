@@ -11,8 +11,8 @@ Parameters:
     Default: t3.micro
     AllowedValues:
       - t3.micro
-      - t2.small
-      - t2.medium
+      - t3.small
+      - t3.medium
     ConstraintDescription: must be a valid EC2 instance type.
   ImageID:
     Description: EC2 instance type
