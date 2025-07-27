@@ -1,0 +1,14 @@
+[
+    {
+        "ParameterKey": "InstanceType",
+        "ParameterValue": "t3.micro"
+    },
+    {
+        "ParameterKey": "ImageID",
+        "ParameterValue": "ami-08a6efd148b1f7504"
+    },	
+    {
+        "ParameterKey": "KeyName",
+        "ParameterValue": "forvpcppk"
+    }
+]
