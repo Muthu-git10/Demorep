@@ -5,7 +5,7 @@ pipeline {
         AWS_DEFAULT_REGION = 'us-east-1'
         STACK_NAME = 'my-cloudformation-stack'
         TEMPLATE_FILE = 'cloudformation/my-stack-template.yaml'
-        PARAMETERS_FILE = 'cloudformation/parameters.json'
+        PARAMETERS = 'KeyName=forvpcppk InstanceType=t3.small'	
     }
 
     stages {
@@ -21,12 +21,29 @@ pipeline {
             steps {
                 withAWS(credentials: 'AKIA3DQM53PU5UEPCL6O', region: "${AWS_DEFAULT_REGION}") {
                     bat """
-                    aws cloudformation deploy ^
-                        --stack-name ${STACK_NAME} ^
-                        --template-file ${TEMPLATE_FILE} ^
-                        --parameter-overrides KeyName=forvpcppk ^
-                        --capabilities CAPABILITY_NAMED_IAM
+                        aws cloudformation deploy ^
+                            --stack-name ${STACK_NAME} ^
+                            --template-file ${TEMPLATE_FILE} ^
+                            --parameter-overrides ${PARAMETERS} ^
+                            --capabilities CAPABILITY_NAMED_IAM
                     """
+                }
+            }
+        }
+
+        stage('Fetch Stack Outputs') {
+            steps {
+                script {
+                    def output = bat (
+                        script: """
+                            aws cloudformation describe-stacks ^
+                                --stack-name ${STACK_NAME} ^
+                                --query "Stacks[0].Outputs" ^
+                                --output text
+                        """,
+                        returnStdout: true
+                    ).trim()
+                    echo "📦 Stack Outputs:\n${output}"
                 }
             }
         }
