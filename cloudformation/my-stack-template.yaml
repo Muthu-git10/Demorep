@@ -1,47 +1,50 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Create an EC2 instance (Amazon Linux 2) with SSH access.
+Description: Launch EC2 instance and install Apache Tomcat 9
 
 Parameters:
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access
     Type: AWS::EC2::KeyPair::KeyName
-  InstanceType:
-    Description: EC2 instance type
-    Type: String
-    Default: t3.micro
-    AllowedValues:
-      - t3.micro
-      - t3.small
-      - t3.medium
-    ConstraintDescription: must be a valid EC2 instance type.
-  ImageID:
-    Description: EC2 instance type
-    Type: String
-    Default: ami-08a6efd148b1f7504
+
 Resources:
-  EC2SecurityGroup:
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-08a6efd148b1f7504  # Amazon Linux 2 (us-east-1)
+      SecurityGroups:
+        - !Ref InstanceSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y java-11-openjdk
+          curl -O https://downloads.apache.org/tomcat/tomcat-9/v9.0.83/bin/apache-tomcat-9.0.83.tar.gz
+          mkdir -p /opt/tomcat
+          tar xzvf apache-tomcat-9.0.83.tar.gz -C /opt/tomcat --strip-components=1
+          chmod +x /opt/tomcat/bin/*.sh
+          /opt/tomcat/bin/startup.sh
+
+  InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Enable SSH access
+      GroupDescription: Allow SSH and HTTP access
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          CidrIp: 0.0.0.0/0  # WARNING: Open to the world (modify for production)
-
-  EC2Instance:
-    Type: AWS::EC2::Instance
-    Properties:
-      InstanceType: !Ref InstanceType
-      KeyName: !Ref KeyName
-      SecurityGroups:
-        - !Ref EC2SecurityGroup
-      ImageId: !Ref ImageID  # Amazon Linux 2 AMI (This ID is region-specific)
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
 
 Outputs:
-  InstanceId:
-    Description: EC2 Instance ID
-    Value: !Ref EC2Instance
-  PublicIP:
-    Description: Public IP address of the EC2 instance
+  InstancePublicIP:
+    Description: Public IP of the new EC2 instance
     Value: !GetAtt EC2Instance.PublicIp
+
+  TomcatURL:
+    Description: URL to access Tomcat
+    Value: !Sub "http://${EC2Instance.PublicDnsName}:8080"
