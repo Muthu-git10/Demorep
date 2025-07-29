@@ -4,7 +4,7 @@ pipeline {
     environment {
         AWS_DEFAULT_REGION = 'us-east-1'
         STACK_NAME = 'ec2-tomcat-stack'
-        TEMPLATE_FILE = 'cloudformation/ec2-tomcat.yaml'
+        TEMPLATE_FILE = 'cloudformation/my-stack-template.yaml'
 		PARAMETERS = 'KeyName=forvpcppk InstanceType=t3.micro'	
     }
 
