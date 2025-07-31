@@ -10,7 +10,7 @@ Resources:
   EC2Instance:
     Type: AWS::EC2::Instance
     Properties:
-      InstanceType: t3.medium
+      InstanceType: t3.small
       KeyName: !Ref KeyName
       ImageId: ami-08a6efd148b1f7504  # Amazon Linux 2 (us-east-1)
       SecurityGroups:
