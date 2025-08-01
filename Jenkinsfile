@@ -3,9 +3,9 @@ pipeline {
 
     environment {
         AWS_DEFAULT_REGION = 'us-east-1'
-        STACK_NAME = 'my-cloudformation-stack'
+        STACK_NAME = 'New stack for Jenkinscreation'
         TEMPLATE_FILE = 'cloudformation/my-stack-template.yaml'
-        PARAMETERS = 'KeyName=forvpcppk InstanceType=t3.micro'	
+        PARAMETERS = 'KeyName=forvpcppk InstanceType=t3.small'	
     }
 
     stages {
