@@ -1,10 +1,11 @@
 pipeline {
     agent any
     stages {
-        stage('Build in Docker') {
+        stage('Build with Maven in Docker') {
             steps {
-                bat 'dir' 
-				bat 'docker run --rm -v "%cd%:/app" -w /app maven:3.9.6-eclipse-temurin-17 mvn clean package'
+                dir('Javaapp') {
+                    bat 'docker run --rm -v "%cd%:/app" -w /app maven:3.9.6-eclipse-temurin-17 mvn clean package'
+                }
             }
         }
     }
