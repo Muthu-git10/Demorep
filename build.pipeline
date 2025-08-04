@@ -3,7 +3,8 @@ pipeline {
     stages {
         stage('Build in Docker') {
             steps {
-                bat 'docker run --rm -v "%cd%:/app" -w /app maven:3.9.6-eclipse-temurin-17 mvn clean package'
+                bat 'dir' 
+				bat 'docker run --rm -v "%cd%:/app" -w /app maven:3.9.6-eclipse-temurin-17 mvn clean package'
             }
         }
     }
