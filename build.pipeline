@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/your-repo/my-maven-app.git' // Change to your repo
+                git 'https://github.com/Muthu-git10/Demorep.git' // Change to your repo
             }
         }
 
