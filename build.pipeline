@@ -1,28 +1,35 @@
 pipeline {
-<<<<<<< HEAD
-    agent {
-        docker {
-            image 'maven:3.9.6-eclipse-temurin-17'  // Use Maven with JDK 17 (adjust if needed)
-            args '-v /root/.m2:/root/.m2'  // Cache Maven repo to speed up builds
-        }
+    agent { label 'agent-1' } // Target your Docker build agent node
+
+    environment {
+        PROJECT_NAME = 'my-maven-app'
+        MAVEN_OPTS = '-Dmaven.repo.local=.m2/repository' // Local .m2 cache in workspace
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/Muthu-git10/Demorep.git'  // <-- Replace with your Git repo URL
+                git 'https://github.com/your-repo/my-maven-app.git' // Change to your repo
             }
         }
 
-        stage('Build') {
+        stage('Build in Docker (Maven)') {
             steps {
-                sh 'mvn clean package'
+                script {
+                    docker.image('maven:3.9.6-eclipse-temurin-17').inside('-v $PWD/.m2:/root/.m2') {
+                        sh 'mvn clean package'
+                    }
+                }
             }
         }
 
         stage('Test') {
             steps {
-                sh 'mvn test'
+                script {
+                    docker.image('maven:3.9.6-eclipse-temurin-17').inside('-v $PWD/.m2:/root/.m2') {
+                        sh 'mvn test'
+                    }
+                }
             }
         }
 
@@ -31,25 +38,17 @@ pipeline {
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
-
     }
 
     post {
         always {
             junit 'target/surefire-reports/*.xml'
         }
-    }
-}
-=======
-    agent any
-    stages {
-        stage('Build with Maven in Docker') {
-            steps {
-                dir('Javaapp') {
-                    bat 'docker run --rm -v "%cd%:/app" -w /app maven:3.9.6-eclipse-temurin-17 mvn clean package'
-                }
-            }
+        success {
+            echo 'Build completed successfully on Docker agent!'
+        }
+        failure {
+            echo 'Build jenkins failed.'
         }
     }
 }
->>>>>>> ab19bddfd64cbda513e472f515824668f4c27c5e
