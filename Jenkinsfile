@@ -24,10 +24,17 @@ pipeline {
                             --stack-name ${STACK_NAME} ^
                             --template-file ${TEMPLATE_FILE} ^
                             --parameter-overrides ${PARAMETERS} ^
+<<<<<<< HEAD
                             --capabilities CAPABILITY_NAMED_IAM ^
 							--region us-east-1
                     """
             }
+=======
+                            --capabilities CAPABILITY_NAMED_IAM --region ${AWS_DEFAULT_REGION} ^
+                            --no-fail-on-empty-changeset
+                    """
+                }
+>>>>>>> ab19bddfd64cbda513e472f515824668f4c27c5e
         }
 
 		stage('Fetch Stack Outputs') {
@@ -38,14 +45,22 @@ pipeline {
 								aws cloudformation describe-stacks ^
 									--stack-name ${STACK_NAME} ^
 									--query "Stacks[0].Outputs" ^
+<<<<<<< HEAD
 									--output text ^
 									--region us-east-1
+=======
+									--output text --region ${AWS_DEFAULT_REGION}
+>>>>>>> ab19bddfd64cbda513e472f515824668f4c27c5e
 							""",
 							returnStdout: true
 						).trim()
 						echo "📦 Stack Outputs:\n${output}"
 					}
+<<<<<<< HEAD
 				}
+=======
+			}
+>>>>>>> ab19bddfd64cbda513e472f515824668f4c27c5e
 		}
     }
 
