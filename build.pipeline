@@ -3,7 +3,6 @@ pipeline {
     stages {
         stage('Test') {
             steps {
-                git 'https://github.com/Muthu-git10/Demorep.git' // Change to your repo
                 sh 'echo hello'
             }
         }
