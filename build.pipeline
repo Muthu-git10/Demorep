@@ -1,54 +1,10 @@
 pipeline {
     agent { label 'agent-1' } // Target your Docker build agent node
-
-    environment {
-        PROJECT_NAME = 'my-maven-app'
-        MAVEN_OPTS = '-Dmaven.repo.local=.m2/repository' // Local .m2 cache in workspace
-    }
-
     stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/Muthu-git10/Demorep.git' // Change to your repo
-            }
-        }
-
-        stage('Build in Docker (Maven)') {
-            steps {
-                script {
-                    docker.image('maven:3.9.6-eclipse-temurin-17').inside('-v $PWD/.m2:/root/.m2') {
-                        sh 'mvn clean package'
-                    }
-                }
-            }
-        }
-
         stage('Test') {
             steps {
-                script {
-                    docker.image('maven:3.9.6-eclipse-temurin-17').inside('-v $PWD/.m2:/root/.m2') {
-                        sh 'mvn test'
-                    }
-                }
+                #git 'https://github.com/Muthu-git10/Demorep.git' // Change to your repo
+                sh 'echo hello'
             }
         }
-
-        stage('Archive Artifacts') {
-            steps {
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-            }
-        }
-    }
-
-    post {
-        always {
-            junit 'target/surefire-reports/*.xml'
-        }
-        success {
-            echo 'Build completed successfully on Docker agent!'
-        }
-        failure {
-            echo 'Build jenkins failed.'
-        }
-    }
 }
