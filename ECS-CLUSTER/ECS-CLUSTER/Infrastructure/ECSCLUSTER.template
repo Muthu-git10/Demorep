@@ -1,0 +1,395 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "CloudFormation Stack for Creating ECS Cluster and it's require components.",
+    "Parameters": {
+        "AssetAreaName": {
+            "Description": "LNG Asset Resource Name",
+            "Type": "String",
+            "Default": "ECSCLUSTER"
+        },
+        "AssetGroup": {
+            "Description": "LNG Asset Group",
+            "Type": "String",
+            "Default": "cert",
+            "AllowedValues": [
+                "cert"
+            ]
+        },
+        "AssetName": {
+            "Description": "LNG Asset Name",
+            "Type": "String",
+            "Default": "ProjectA"
+        },
+        "ClusterIdentity": {
+            "Description": "Specify cluster identity",
+            "Type": "String",
+            "Default": "BAU",
+            "AllowedValues": [
+                "BAU",
+                "BulkV1",
+                "BulkV2"
+            ]
+        }
+    },
+    "Resources": {
+        "ProjectACWLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+                "LogGroupName": {
+                    "Fn::Sub": "${AssetGroup}-${AssetID}-${AssetName}-${ClusterIdentity}-CW-logs"
+                },
+                "RetentionInDays": 30
+            }
+        },
+        "ProjectAECSCluster": {
+            "Type": "AWS::ECS::Cluster",
+            "Properties": {
+                "ClusterName": {
+                    "Fn::Sub": "${AssetGroup}-${AssetName}-${ClusterIdentity}-Cluster"
+                },
+                "Tags": [
+                    {
+                        "Key": "AssetGroup",
+                        "Value": {
+                            "Ref": "AssetGroup"
+                        }
+                    },
+                    {
+                        "Key": "AssetID",
+                        "Value": {
+                            "Ref": "AssetID"
+                        }
+                    },
+                    {
+                        "Key": "AssetAreaName",
+                        "Value": {
+                            "Ref": "AssetAreaName"
+                        }
+                    },
+                    {
+                        "Key": "AssetName",
+                        "Value": {
+                            "Ref": "AssetName"
+                        }
+                    }
+                ]
+            }
+        },
+        "ProjectALoadBalancer": {
+            "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+            "Properties": {
+                "Name": {
+                    "Fn::Sub": "${AssetGroup}-${AssetName}-${ClusterIdentity}-ECS-LB"
+                },
+				"Subnets": [
+				  "subnet-08b87cbeadece142a",
+				  "subnet-09d962dc7d060f22b"
+				],
+                "Scheme": "internet-facing",
+                "LoadBalancerAttributes": [
+                    {
+                        "Key": "idle_timeout.timeout_seconds",
+                        "Value": "4000"
+                    }
+                ],
+                "SecurityGroups": [
+                    {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${AssetGroup}-${AssetName}-ALBSG"
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "AssetAreaName",
+                        "Value": {
+                            "Ref": "AssetAreaName"
+                        }
+                    },
+                    {
+                        "Key": "AssetName",
+                        "Value": {
+                            "Ref": "AssetName"
+                        }
+                    },
+                    {
+                        "Key": "AssetGroup",
+                        "Value": {
+                            "Ref": "AssetGroup"
+                        }
+                    }
+                ]
+            }
+        },
+        "ProjectATargetGroupECS": {
+            "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+            "Properties": {
+                "Name": {
+                    "Fn::Sub": "${AssetGroup}-ProjectA-${ClusterIdentity}-ECSPrivateTG"
+                },
+                "HealthCheckIntervalSeconds": 30,
+                "HealthCheckProtocol": "HTTP",
+                "HealthCheckTimeoutSeconds": 10,
+                "HealthyThresholdCount": 2,
+                "Port": 80,
+                "Protocol": "HTTP",
+                "UnhealthyThresholdCount": 2,
+                "VpcId": "vpc-029ba1745bfc6d66c",
+                "Tags": [
+                    {
+                        "Key": "AssetAreaName",
+                        "Value": {
+                            "Ref": "AssetAreaName"
+                        }
+                    },
+                    {
+                        "Key": "AssetName",
+                        "Value": {
+                            "Ref": "AssetName"
+                        }
+                    },
+                    {
+                        "Key": "AssetGroup",
+                        "Value": {
+                            "Ref": "AssetGroup"
+                        }
+                    }
+                ]
+            }
+        },
+        "ProjectAListener": {
+            "Type": "AWS::ElasticLoadBalancingV2::Listener",
+            "DependsOn": "ProjectALoadBalancer",
+            "Properties": {
+                "DefaultActions": [
+                    {
+                        "Type": "forward",
+                        "TargetGroupArn": {
+                            "Ref": "ProjectATargetGroupECS"
+                        }
+                    }
+                ],
+                "LoadBalancerArn": {
+                    "Ref": "ProjectALoadBalancer"
+                },
+                "Port": "80",
+                "Protocol": "HTTP"
+            }
+        },
+        "ProjectAECSTaskExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Sub": "${AssetGroup}-ProjectA-${ClusterIdentity}-TaskExecution-Role"
+                },
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ecs-tasks.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/ProjectA/",
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+                ],
+                "Policies": [
+                    {
+                        "PolicyName": {
+                            "Fn::Sub": "${AssetGroup}-${AssetName}-${ClusterIdentity}-TaskExcutionRolePolicy"
+                        },
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Sid": "VisualEditor0",
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "secretsmanager:GetSecretValue",
+                                        "secretsmanager:DescribeSecret",
+                                        "elasticfilesystem:ClientMount",
+                                        "elasticfilesystem:ClientWrite",
+                                        "elasticfilesystem:ClientRootAccess",
+                                        "elasticfilesystem:DescribeMountTargets",
+                                        "s3:ListBucket"
+                                    ],
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Sid": "VisualEditor1",
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "s3:PutObject",
+                                        "s3:GetObject",
+                                        "s3:DeleteObject"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "Tags": [
+                     {
+                        "Key": "AssetAreaName",
+                        "Value": {
+                            "Ref": "AssetAreaName"
+                        }
+                    },
+                    {
+                        "Key": "AssetName",
+                        "Value": {
+                            "Ref": "AssetName"
+                        }
+                    },
+                    {
+                        "Key": "AssetGroup",
+                        "Value": {
+                            "Ref": "AssetGroup"
+                        }
+                    }
+                ]
+            }
+        },
+        "ProjectAAutoScalingRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Sub": "${AssetGroup}-ProjectA-${ClusterIdentity}-Auto-Scaling-Roles"
+                },
+                "AssumeRolePolicyDocument": {
+                    "Statement": {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": "ecs-tasks.amazonaws.com"
+                        },
+                        "Action": "sts:AssumeRole"
+                    }
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole"
+                ],
+                "Tags": [
+                    {
+                        "Key": "AssetAreaName",
+                        "Value": {
+                            "Ref": "AssetAreaName"
+                        }
+                    },
+                    {
+                        "Key": "AssetName",
+                        "Value": {
+                            "Ref": "AssetName"
+                        }
+                    },
+                    {
+                        "Key": "AssetGroup",
+                        "Value": {
+                            "Ref": "AssetGroup"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs": {
+        "ProjectAECSClusterName": {
+            "Description": "The name of the ProjectA ECS cluster",
+            "Value": {
+                "Ref": "ProjectAECSCluster"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AssetGroup}-ProjectAECSClusterName-${ClusterIdentity}"
+                }
+            }
+        },
+        "ProjectAECSClusterArn": {
+            "Description": "The name of the ProjectA ECS cluster",
+            "Value": {
+                "Fn::GetAtt": [
+                    "ProjectAECSCluster",
+                    "Arn"
+                ]
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AssetGroup}-ProjectAECSClusterArn-${ClusterIdentity}"
+                }
+            }
+        },
+        "ProjectACWLogGroup": {
+            "Description": "The name of the ProjectA cloud watch log group",
+            "Value": {
+                "Ref": "ProjectACWLogGroup"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AssetGroup}-ProjectACWLogGroup-${ClusterIdentity}"
+                }
+            }
+        },
+        "ProjectAECSTaskExecutionRoleArn": {
+            "Description": "The ARN of the ProjectA ECS task execution role",
+            "Value": {
+                "Fn::GetAtt": [
+                    "ProjectAECSTaskExecutionRole",
+                    "Arn"
+                ]
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AssetGroup}-ProjectAECSTaskExecutionRoleArn-${ClusterIdentity}"
+                }
+            }
+        },
+        "ProjectAAutoScalingRole": {
+            "Description": "The ARN of the ProjectA ECS task execution role",
+            "Value": {
+                "Fn::GetAtt": [
+                    "ProjectAAutoScalingRole",
+                    "Arn"
+                ]
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AssetGroup}-ProjectAAutoScalingRole-${ClusterIdentity}"
+                }
+            }
+        },
+        "ProjectAListenerArn": {
+            "Description": "The ARN of the ProjectA load balancer's listener",
+            "Value": {
+                "Ref": "ProjectAListener"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AssetGroup}-ProjectAListenerArn-${ClusterIdentity}"
+                }
+            }
+        },
+        "ProjectALoadBalancerDNSName": {
+            "Description": "The DNS name of the ProjectA ECS cluster load balancer",
+            "Value": {
+                "Fn::GetAtt": [
+                    "ProjectALoadBalancer",
+                    "DNSName"
+                ]
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AssetGroup}-ProjectALoadBalancerDNSName-${ClusterIdentity}"
+                }
+            }
+        }
+    }
+}

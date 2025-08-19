@@ -1,0 +1,155 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "INCases ECS cluster security groups.",
+  "Parameters": {
+    "AssetAreaName": {
+      "Description": "LNG Asset Resource Name",
+      "Type": "String",
+      "Default": "ECSSG"
+    },
+    "AssetGroup": {
+      "Description": "LNG Asset Group",
+      "Type": "String",
+      "Default": "cert",
+      "AllowedValues": [
+        "cert"
+      ]
+    },
+    "AssetID": {
+      "Description": "LNG Asset ID",
+      "Type": "String",
+      "Default": "1821",
+      "AllowedValues": [
+        "1821"
+      ]
+    },
+    "AssetName": {
+      "Description": "LNG Asset Name",
+      "Type": "String",
+      "Default": "IN-Cases",
+      "AllowedValues": [
+        "IN-Cases"
+      ]
+    },
+    "Build": {
+      "Description": "Build Number",
+      "Type": "String",
+      "Default": "1"
+    }
+  },
+  "Resources": {
+    "CloudMetadata": {
+      "Type": "Custom::CloudMetadata",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:CustomResourceGateway"
+        },
+        "AssetID": {
+          "Ref": "AssetID"
+        },
+        "AssetGroup": {
+          "Ref": "AssetGroup"
+        },
+        "AssetAreaName": {
+          "Ref": "AssetAreaName"
+        },
+        "Version": "2",
+        "LastUpdate": "03012019001"
+      }
+    },
+    "INCasesSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group with multiple rules",
+        "GroupName": {
+          "Fn::Sub": "${AssetGroup}-${AssetName}-ECSSG"
+        },
+        "VpcId": {
+          "Fn::GetAtt": [
+            "CloudMetadata",
+            "vpc.Id"
+          ]
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 8030,
+            "ToPort": 8075,
+            "CidrIp": "10.148.240.0/22"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 8088,
+            "ToPort": 8088,
+            "CidrIp": "10.148.240.0/22"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 9030,
+            "ToPort": 9075,
+            "CidrIp": "10.148.240.0/22"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "FromPort": "-1",
+            "ToPort": "-1",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AssetGroup}-${AssetName}-ECSSG"
+            }
+          },
+          {
+            "Key": "AssetAreaName",
+            "Value": {
+              "Ref": "AssetAreaName"
+            }
+          },
+          {
+            "Key": "AssetGroup",
+            "Value": {
+              "Ref": "AssetGroup"
+            }
+          },
+          {
+            "Key": "AssetID",
+            "Value": {
+              "Ref": "AssetID"
+            }
+          },
+          {
+            "Key": "AssetName",
+            "Value": {
+              "Ref": "AssetName"
+            }
+          },
+          {
+            "Key": "Build",
+            "Value": {
+              "Ref": "Build"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "INCasesSecurityGroupId": {
+      "Description": "Security Group ID",
+      "Value": {
+        "Ref": "INCasesSecurityGroup"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AssetGroup}-${AssetName}-ECSSG"
+        }
+      }
+    }
+  }
+}

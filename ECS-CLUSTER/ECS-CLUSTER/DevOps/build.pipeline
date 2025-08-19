@@ -1,0 +1,31 @@
+@Library('DevOpsShared@v1') _
+ 
+pipeline {
+    agent any
+    environment {
+        def ASSET_ID = "1821"
+        def ASSET_NAME = "IN-Cases"
+        def ASSET_AREA_NAME = "ECSCLUSTER"
+        def PROJECT_PATH = "ECS-CLUSTER"
+    }
+    stages {
+        stage('Quality Check'){
+            steps{checkQuality()}
+        }
+        stage('Artifactory Build') {
+            steps{
+                buildReleaseUnit()
+            }
+        }
+        stage('Publish Release Unit'){
+            steps{
+                publishReleaseUnit()
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}

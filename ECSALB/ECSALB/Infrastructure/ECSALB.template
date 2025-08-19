@@ -1,0 +1,95 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "USProofing ECS cluster with security groups and exports.",
+  "Parameters": {
+    "AssetAreaName": {
+      "Description": "LNG Asset Area",
+      "Type": "String",
+      "Default": "ECSSG"
+    },
+    "AssetGroup": {
+      "Description": "LNG Asset Group",
+      "Type": "String",
+      "Default": "cert",
+      "AllowedValues": [
+        "cert"
+      ]
+    },
+    "AssetName": {
+      "Description": "LNG Asset Name",
+      "Type": "String",
+      "Default": "IN-Cases",
+      "AllowedValues": [
+        "IN-Cases"
+      ]
+    }
+  },
+  "Resources": {
+    "ProjectAALBSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for ALB",
+        "GroupName": {
+          "Fn::Sub": "${AssetGroup}-${AssetName}-ALBSG"
+        },
+        "VpcId": "vpc-029ba1745bfc6d66c"
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80,
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Public"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "FromPort": "-1",
+            "ToPort": "-1",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AssetGroup}-${AssetName}-ALBSG"
+            }
+          },
+          {
+            "Key": "AssetAreaName",
+            "Value": {
+              "Ref": "AssetAreaName"
+            }
+          },
+          {
+            "Key": "AssetGroup",
+            "Value": {
+              "Ref": "AssetGroup"
+            }
+          },
+          {
+            "Key": "AssetName",
+            "Value": {
+              "Ref": "AssetName"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "ProjectAALBSecurityGroupId": {
+      "Description": "Security Group ID",
+      "Value": {
+        "Ref": "ProjectAALBSecurityGroup"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AssetGroup}-${AssetName}-ALBSG"
+        }
+      }
+    }
+  }
+}

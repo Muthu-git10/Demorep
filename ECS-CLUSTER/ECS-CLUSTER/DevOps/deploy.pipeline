@@ -1,0 +1,59 @@
+@Library('DevOpsShared@v1') _
+pipeline {
+    agent any
+    parameters {
+        string(name: 'releaseUnitBuild', description: 'REQUIRED: Build Number of the release unit you wish to deploy')
+        choice(name: 'clusterIdentity',
+                description: 'REQUIRED: Name of Cluster Identity to deploy into',
+                choices:'BAU\n' +
+                        'BulkV1\n' +
+                        'BulkV2' 
+        )
+    }
+    environment {
+        def ASSET_ID = "1821"
+        def ASSET_NAME = "IN-Cases"
+        def ASSET_AREA_NAME = "ECSCLUSTER"
+        def ASSET_GROUP = "cert"
+        def CLUSTER_IDENTITY = "${params.clusterIdentity}"
+        def TARGET_ACCOUNT = "107354778857" // Defaulting to the specified AWS account
+        def TEMPLATE_NAME = 'ECSCLUSTER'
+        def RELEASE_UNIT = [commons.getBranchName(), params.releaseUnitBuild].join('/')
+    }
+    stages {
+        stage('Stage Release Unit') {
+            steps {
+                stageReleaseUnit()
+            }
+        }
+        stage('Create Change Set') {
+            steps {
+                cloudformation(
+                        command: 'createChangeSet',
+                        account: TARGET_ACCOUNT,
+                        region: 'us-east-1',
+                        templateName: TEMPLATE_NAME,
+                        capabilities: 'CAPABILITY_NAMED_IAM',
+                        stackName: [ASSET_GROUP, ASSET_NAME, TEMPLATE_NAME, CLUSTER_IDENTITY].join('-').replace("_","-").replace("/", "-"),
+                        stackParameters: [
+                                'AssetGroup'        : ASSET_GROUP,
+                                'AssetName'         : ASSET_NAME,
+                                'AssetID'           : ASSET_ID,
+                                'ClusterIdentity'   : CLUSTER_IDENTITY,
+                        ]
+                )
+            }
+        }
+        stage('Execute Change Set') {
+            steps {
+                cloudformation(
+                        command: 'executeChangeSet',
+                        account: TARGET_ACCOUNT,
+                        region: 'us-east-1',
+                        templateName: TEMPLATE_NAME,
+                        stackName: [ASSET_GROUP, ASSET_NAME, TEMPLATE_NAME, CLUSTER_IDENTITY].join('-').replace("_","-").replace("/", "-")
+                )
+            }
+        }
+    }
+}
